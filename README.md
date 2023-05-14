@@ -2,8 +2,6 @@
 
 _____________________________________________
 
-_____________________________________________
-
 This repository is aimed at reproducing the results of the paper [***""***] The code is written in R. 
 
 The .Rmd files need to be executed in the following order:
