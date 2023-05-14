@@ -1,7 +1,5 @@
 # Targeted cellular deconvolution and modeling of liver cancer cell-free transcriptomic data
 
-_____________________________________________
-
 This repository is aimed at reproducing the results of the paper [***""***] The code is written in R. 
 
 The .Rmd files need to be executed in the following order:
