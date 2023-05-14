@@ -1,0 +1,296 @@
+---
+title: "Cell-free RNA data preprocessing"
+author: "Aram Safrastyan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document: 
+    toc: TRUE
+    code_folding: hide
+    number_sections: TRUE
+knit: (function(input, ...) {
+    rmarkdown::render(
+      input,
+      output_dir = "./html_output"
+    )
+  })
+editor_options: 
+  chunk_output_type: console
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r pkgs, message=F, warning=F}
+library(readr)
+library(tidyverse)
+library(ggfortify)
+library(DESeq2)
+library(biomaRt)
+library(sva)
+library(readxl)
+library(ggpubr)
+library(patchwork)
+```
+
+```{r setup, include=FALSE}
+theme_set(theme_classic(base_size = 18))
+```
+
+# Data loading; cleanup
+
+```{r cleanup, fig.width= 15, fig.height=8}
+load("./data/cfdata_input.RData")
+
+# 1st dataset (GSE174302) aka elife
+elife_countm <- elife_all_samples %>%
+  mutate(feature = str_split(elife_all_samples$feature, "\\|", simplify = TRUE)[, 3]) %>%
+  distinct(feature, .keep_all = TRUE) %>%
+  filter(str_detect(string = feature, pattern = paste(c("^G0([0-9]+)"), collapse = "|"), negate = TRUE)) %>%
+  column_to_rownames(var = "feature")
+elife_meta <- data.frame(samples = colnames(elife_countm), cond = as.factor(str_sub(string = colnames(elife_countm), 1, 4))) %>%
+  mutate(cond = as.factor(str_remove(string = cond, "-|_.*")))
+pattern <- "(?<=[_|-]).*(?=[\\-])"
+elife_meta$batch <- elife_meta$samples %>%
+  str_extract(pattern = pattern)
+# elife_meta$batch[is.na(elife_meta$batch)] <- "PKU"
+levels(elife_meta$cond)[levels(elife_meta$cond) == "HCC"] <- "LC"
+levels(elife_meta$cond)[levels(elife_meta$cond) == "NC"] <- "HD"
+elife_meta %>%
+  dplyr::count(cond)
+rm(elife_all_samples, pattern)
+
+# load 2nd dataset (GSE142987) aka therano
+# sort the sample names
+therano_countm <- therano_countm[, str_sort(names(therano_countm), numeric = TRUE)]
+# transfer gene IDs from column to rownames
+rownames(therano_countm) <- therano_countm$Sample_name
+therano_countm <- therano_countm %>%
+  dplyr::select(-Sample_name)
+names(therano_countm) <- c(seq(575, 604), seq(540, 574))
+therano_countm <- therano_countm %>% rownames_to_column(var = "genes")
+therano_countm <- therano_countm[, order(names(therano_countm))]
+therano_meta$cond <- as.factor(ifelse(therano_meta$disease_state == "liver cancer patient", "LC", "HD"))
+therano_meta %>%
+  dplyr::count(cond)
+
+# load 3rd dataset (GSE182824) aka npj
+npj_meta$cond <- as.factor(npj_meta$source_name)
+npj_meta <- npj_meta %>% dplyr::filter(cond != "Human liver cirrhosis plasma")
+levels(npj_meta$cond)[levels(npj_meta$cond) == "Human liver cancer plasma"] <- "LC"
+levels(npj_meta$cond)[levels(npj_meta$cond) == "Human non-cancer donor plasma"] <- "HD"
+npj_meta %>%
+  dplyr::count(cond)
+npj_countm <- npj_countm %>%
+  column_to_rownames(var = "Geneid") %>%
+  dplyr::select(npj_meta$Run) %>%
+  rownames_to_column(var = "Geneid")
+npj_meta_add <- read_excel("/home/bioinf/R_main/cfdeconv_model/cfdata/metadata/41698_2022_270_MOESM1_ESM.xlsx")
+npj_meta_keys <- read_excel("/home/bioinf/R_main/cfdeconv_model/cfdata/metadata/npj_keys.xlsx", col_names = FALSE)
+colnames(npj_meta_keys) <- c("samples", "seq_id")
+npj_meta_add_joined <- npj_meta_add %>%
+  inner_join(., npj_meta_keys, by = c("SeqID" = "seq_id"))
+npj_meta <- npj_meta %>%
+  inner_join(., npj_meta_add_joined, by = c("Sample.Name" = "samples"))
+npj_meta <- npj_meta %>%
+  column_to_rownames(var = "Run")
+
+# load 4th dataset (PRJNA907745) aka frontiers
+frontiers_meta$cond <- as.factor(frontiers_meta$disease)
+frontiers_meta <- frontiers_meta %>% dplyr::filter(cond != "Cirrhosis")
+levels(frontiers_meta$cond)[levels(frontiers_meta$cond) == "Hepatoma"] <- "LC"
+levels(frontiers_meta$cond)[levels(frontiers_meta$cond) == "Control"] <- "HD"
+frontiers_countm <- frontiers_countm %>% dplyr::select(Geneid, rownames(frontiers_meta))
+frontiers_meta %>%
+  dplyr::count(cond)
+```
+
+# Gene id conversion to gene names 
+
+```{r gene_id, fig.width= 15, fig.height=8}
+# therano gene id => gene name
+httr::set_config(httr::config(ssl_verifypeer = FALSE))
+genes <- therano_countm$genes
+# remove version number
+genes_clean <- gsub("\\..*", "", genes)
+# define the dataset to use for conversion
+mart <- useEnsembl(dataset = "hsapiens_gene_ensembl", biomart = "ensembl", version = 108)
+# get the hgnc symbols of genes
+gene_IDs <- getBM(filters = "ensembl_gene_id", attributes = c("hgnc_symbol", "ensembl_gene_id"), values = genes_clean, mart = mart)
+# convert the matrix to dataframe for easier data wrangling
+therano_countm$genes <- genes_clean
+# transfer the gene names into the main dataset
+therano_countm <- merge(therano_countm, gene_IDs, by.x = "genes", by.y = "ensembl_gene_id", all.x = TRUE)
+# some genes to not have names - substitute the empty spaces with NA
+therano_countm <- therano_countm %>%
+  mutate(hgnc_symbol = na_if(hgnc_symbol, "")) %>%
+  mutate(hgnc_symbol = ifelse(str_detect(therano_countm$genes, pattern = "circ"), genes, hgnc_symbol)) %>%
+  drop_na(hgnc_symbol) %>%
+  distinct(hgnc_symbol, .keep_all = TRUE) %>%
+  column_to_rownames(var = "hgnc_symbol") %>%
+  dplyr::select(-genes)
+dim(therano_countm)
+
+# npj gene id => gene name
+genes <- npj_countm$Geneid
+genes_clean <- gsub("\\..*", "", genes)
+gene_IDs <- getBM(filters = "ensembl_gene_id", attributes = c("hgnc_symbol", "ensembl_gene_id"), values = genes_clean, mart = mart)
+npj_countm$Geneid <- genes_clean
+npj_countm <- merge(npj_countm, gene_IDs, by.x = "Geneid", by.y = "ensembl_gene_id")
+npj_countm <- npj_countm %>%
+  mutate(hgnc_symbol = na_if(hgnc_symbol, "")) %>%
+  drop_na(hgnc_symbol) %>%
+  distinct(hgnc_symbol, .keep_all = TRUE) %>%
+  column_to_rownames(var = "hgnc_symbol") %>%
+  dplyr::select(-Geneid)
+dim(npj_countm)
+
+# frontiers gene id => gene name
+genes <- frontiers_countm$Geneid
+genes_clean <- gsub("\\..*", "", genes)
+gene_IDs <- getBM(filters = "ensembl_gene_id", attributes = c("hgnc_symbol", "ensembl_gene_id"), values = genes_clean, mart = mart)
+frontiers_countm$Geneid <- genes_clean
+frontiers_countm <- merge(frontiers_countm, gene_IDs, by.x = "Geneid", by.y = "ensembl_gene_id")
+frontiers_countm <- frontiers_countm %>%
+  mutate(hgnc_symbol = na_if(hgnc_symbol, "")) %>%
+  drop_na(hgnc_symbol) %>%
+  distinct(hgnc_symbol, .keep_all = TRUE) %>%
+  column_to_rownames(var = "hgnc_symbol") %>%
+  dplyr::select(-Geneid)
+dim(frontiers_countm)
+rm(gene_IDs, mart, genes, genes_clean)
+```
+
+# Analysis only of HD and LC samples 
+
+```{r filt_analysis, fig.width= 15, fig.height=8}
+elife_countm_filt <- elife_countm %>%
+  dplyr::select(elife_meta[elife_meta$cond %in% c("LC", "HD"), ]$samples)
+elife_meta_filt <- elife_meta %>%
+  dplyr::filter(cond %in% c("LC", "HD")) %>%
+  droplevels() %>%
+  dplyr::mutate(cond = factor(cond, levels = c("HD", "LC")))
+# batch correction for elife
+# elife_batch_filt <- ComBat_seq(as.matrix(elife_countm_filt), batch = elife_meta_filt$batch, group = elife_meta_filt$cond)
+elife_batch_filt <- as.matrix(elife_countm_filt)
+
+# DESeq2 VST visualization; elife
+dds_elife <- DESeq2::DESeqDataSetFromMatrix(
+  countData = elife_batch_filt,
+  colData = elife_meta_filt,
+  design = ~cond
+)
+dds_elife <- estimateSizeFactors(dds_elife)
+vsd_elife <- vst(dds_elife, blind = FALSE)
+pca_elife <- plotPCA(vsd_elife, intgroup = "cond", returnData = TRUE)
+a <- ggplot(pca_elife, aes(x = PC1, y = PC2, colour = cond)) +
+  geom_point() +
+  scale_colour_manual(values = c("skyblue", "darkred")) +
+  ggtitle("Chen et al. (2022)") +
+  guides(colour = guide_legend(title = "condition", override.aes = list(size = 5))) +
+  theme_pubr(base_size = 12, base_family = "Helvetica") +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 14), plot.caption = element_text(size = 14, hjust = 1, vjust = 0, face = "italic", color = "black"))
+a
+rm(dds_elife, vsd_elife, pca_elife)
+
+# DESeq2 VST visualization; therano
+therano_meta <- therano_meta
+dds_therano <- DESeq2::DESeqDataSetFromMatrix(
+  countData = therano_countm,
+  colData = therano_meta,
+  design = ~cond
+)
+dds_therano <- estimateSizeFactors(dds_therano)
+vsd_therano <- vst(dds_therano, blind = FALSE)
+pca_therano <- plotPCA(vsd_therano, intgroup = "cond", returnData = TRUE)
+b <- ggplot(pca_therano, aes(x = PC1, y = PC2, colour = cond)) +
+  geom_point() +
+  scale_colour_manual(values = c("skyblue", "darkred")) +
+  ggtitle("Zhu et al. (2021)") +
+  guides(colour = guide_legend(title = "condition", override.aes = list(size = 5))) +
+  theme_pubr(base_size = 12, base_family = "Helvetica") +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 14), plot.caption = element_text(size = 14, hjust = 1, vjust = 0, face = "italic", color = "black"))
+b
+rm(dds_therano, vsd_therano, pca_therano)
+
+# batch correction for npj
+npj_countm_filt <- npj_countm %>%
+  dplyr::select(rownames(npj_meta[npj_meta$cond %in% c("LC", "HD"), ]))
+npj_meta_filt <- npj_meta %>%
+  dplyr::filter(cond %in% c("LC", "HD")) %>%
+  droplevels() %>%
+  dplyr::mutate(cond = factor(cond, levels = c("HD", "LC")))
+npj_batch_filt <- ComBat_seq(as.matrix(npj_countm_filt), batch = npj_meta_filt$Cohort, group = npj_meta_filt$cond)
+
+# DESeq2 VST visualization; npj
+dds_npj <- DESeq2::DESeqDataSetFromMatrix(
+  countData = npj_countm_filt,
+  colData = npj_meta_filt,
+  design = ~cond
+)
+dds_npj <- estimateSizeFactors(dds_npj)
+vsd_npj <- vst(dds_npj, blind = FALSE)
+pca_npj <- plotPCA(vsd_npj, intgroup = "cond", returnData = TRUE)
+c <- ggplot(pca_npj, aes(x = PC1, y = PC2, colour = cond)) +
+  geom_point() +
+  scale_colour_manual(values = c("skyblue", "darkred")) +
+  ggtitle("Roskams-Hieter et al. (2022)") +
+  guides(colour = guide_legend(title = "condition", override.aes = list(size = 5))) +
+  theme_pubr(base_size = 12, base_family = "Helvetica") +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 14), plot.caption = element_text(size = 14, hjust = 1, vjust = 0, face = "italic", color = "black"))
+c
+rm(dds_npj, vsd_npj, pca_npj)
+
+# DESeq2 VST visualization; frontiers
+frontiers_countm_filt <- frontiers_countm %>%
+  dplyr::select(rownames(frontiers_meta[frontiers_meta$cond %in% c("LC", "HD"), ]))
+frontiers_meta_filt <- frontiers_meta %>%
+  dplyr::filter(cond %in% c("LC", "HD")) %>%
+  droplevels()
+frontiers_meta_filt <- frontiers_meta_filt %>%
+  dplyr::rename(bleed = `Bleed date`) %>%
+  dplyr::mutate(bleed = as.character(bleed)) # %>%
+# mutate(bleed = ifelse(bleed < "2016-01-01", "pre-2016", "post-2016"))
+
+dds_frontiers <- DESeq2::DESeqDataSetFromMatrix(
+  countData = frontiers_countm_filt,
+  colData = frontiers_meta_filt,
+  design = ~cond
+)
+
+dds_frontiers <- estimateSizeFactors(dds_frontiers)
+vsd_frontiers <- vst(dds_frontiers, blind = FALSE)
+pca_frontiers <- plotPCA(vsd_frontiers, intgroup = "cond", returnData = TRUE)
+d <- ggplot(pca_frontiers, aes(x = PC1, y = PC2, colour = cond)) +
+  geom_point() +
+  scale_colour_manual(values = c("skyblue", "darkred")) +
+  ggtitle("Block et al. (2022)") +
+  guides(colour = guide_legend(title = "condition", override.aes = list(size = 5))) +
+  theme_pubr(base_size = 12, base_family = "Helvetica") +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 14), plot.caption = element_text(size = 14, hjust = 1, vjust = 0, face = "italic", color = "black"))
+d
+rm(dds_frontiers, vsd_frontiers, pca_frontiers)
+save(elife_batch_filt, elife_meta_filt, npj_batch_filt, npj_meta_filt, therano_countm, therano_meta, frontiers_countm_filt, frontiers_meta_filt, file = "./data/cfinput_clean_filt.RData")
+rm(elife_batch_filt, elife_meta_filt, npj_batch_filt, npj_meta_filt, frontiers_countm_filt, frontiers_meta_filt)
+
+p0 <- ggarrange(c, a, b, d, common.legend = TRUE) + plot_annotation(title = "Princripal component analysis (PCA) plot per dataset", theme = theme(plot.title = element_text(size = 22, family = "Helvetica", face = "bold", hjust = 0.5), plot.subtitle = element_text(hjust = 0.5, face = "bold", family = "Helvetica", size = 16)))
+ggsave(plot = p0, file = "./figures/suppl1.png", units = "mm", device = ragg::agg_png, height = 90, width = 90, scaling = 0.45, limitsize = FALSE, dpi = 300, bg = "transparent")
+gc()
+```
+
+# Analysis of all samples (elife)
+
+```{r all_analysis, fig.width= 15, fig.height=8}
+elife_countm_all <- elife_countm
+elife_meta_all <- elife_meta
+elife_batch_all <- as.matrix(elife_countm_all)
+save(elife_batch_all, elife_meta_all, file = "./data/cfinput_clean_all.RData")
+```
+
+```{r}
+sessionInfo()
+```

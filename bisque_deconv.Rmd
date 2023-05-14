@@ -1,0 +1,136 @@
+---
+title: "SC-based Bisque deconvolution"
+author: "Aram Safrastyan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document: 
+    toc: TRUE
+    code_folding: hide
+    number_sections: TRUE
+knit: (function(input, ...) {
+    rmarkdown::render(
+      input,
+      output_dir = "./html_output"
+    )
+  })
+editor_options: 
+  chunk_output_type: console
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r pkgs, message=F, warning=F}
+library(tidyverse)
+library(BisqueRNA)
+library(Seurat)
+library(Biobase)
+```
+
+```{r setup, include=FALSE}
+theme_set(theme_classic(base_size = 18))
+```
+
+# Create single-cell reference
+
+```{r sc_ref, fig.width= 15, fig.height=8, eval = FALSE}
+scrna_countm <- read.csv("./data/scrna_countm.txt")
+scrna_metadata_init <- read.delim("./data/scrna_metadata_init.csv")
+scrna_metadata_init$CellType <- ifelse(grepl("Hepatocyte", scrna_metadata_init$CellType), "Hepatocyte", scrna_metadata_init$CellType)
+scrna_metadata_init$CellType <- ifelse(grepl("T_Cells", scrna_metadata_init$CellType), "T_Cells", scrna_metadata_init$CellType)
+scrna_metadata_init$CellType <- ifelse(grepl("LSECs", scrna_metadata_init$CellType), "LSECs", scrna_metadata_init$CellType)
+scrna_metadata_init$CellType <- ifelse(grepl("Macrophage", scrna_metadata_init$CellType), "Macrophage", scrna_metadata_init$CellType)
+scrna_countm <- scrna_countm %>% column_to_rownames(., var = "X")
+rownames(scrna_metadata_init) <- scrna_metadata_init$CellName
+seurat_sc <- CreateSeuratObject(scrna_countm, meta.data = scrna_metadata_init)
+temp_sc <- seurat_sc@meta.data %>% dplyr::select(Sample, CellType)
+sample.ids <- colnames(as.matrix(seurat_sc@assays$RNA@counts))
+individual.labels <- temp_sc$Sample
+cell.type.labels <- temp_sc$CellType
+# individual.ids and cell.types should be in the same order as in sample.ids
+sc.meta <- data.frame(
+  labelDescription = c(
+    "SubjectName",
+    "cellType"
+  ),
+  row.names = c(
+    "SubjectName",
+    "cellType"
+  )
+)
+sc.pheno <- data.frame(
+  check.names = F, check.rows = F,
+  stringsAsFactors = F,
+  row.names = sample.ids,
+  SubjectName = individual.labels,
+  cellType = cell.type.labels
+)
+sc.pdata <- new("AnnotatedDataFrame",
+  data = sc.pheno,
+  varMetadata = sc.meta
+)
+sc.eset <- Biobase::ExpressionSet(assayData = as.matrix(seurat_sc@assays$RNA@counts), phenoData = sc.pdata)
+rm(seurat_sc, scrna_countm, temp_sc)
+gc()
+save(sc.eset, file = "./data/scrna_input.RData")
+```
+
+# Deconvolution (only NCH and LC)
+
+```{r deconv_all, fig.width= 15, fig.height=8}
+load("./data/cfinput_clean_filt.RData")
+load("./data/scrna_input.RData")
+# elife
+elife.eset <- Biobase::ExpressionSet(assayData = as.matrix(elife_batch_filt))
+elife_deconv <- BisqueRNA::ReferenceBasedDecomposition(elife.eset, sc.eset, markers = NULL, use.overlap = FALSE)
+gc()
+elife_res <- as.data.frame(t(elife_deconv$bulk.props))
+elife_meta_deconv_filt <- cbind(elife_meta_filt, elife_res)
+
+# therano
+therano.eset <- Biobase::ExpressionSet(assayData = as.matrix(therano_countm))
+therano_deconv <- BisqueRNA::ReferenceBasedDecomposition(therano.eset, sc.eset, markers = NULL, use.overlap = FALSE)
+gc()
+therano_res <- as.data.frame(t(therano_deconv$bulk.props))
+therano_meta_deconv_filt <- cbind(therano_meta, therano_res)
+
+# npj
+npj.eset <- Biobase::ExpressionSet(assayData = as.matrix(npj_batch_filt))
+npj_deconv <- BisqueRNA::ReferenceBasedDecomposition(npj.eset, sc.eset, markers = NULL, use.overlap = FALSE)
+gc()
+npj_res <- as.data.frame(t(npj_deconv$bulk.props))
+npj_meta_deconv_filt <- cbind(npj_meta_filt, npj_res)
+
+# frontiers
+frontiers.eset <- Biobase::ExpressionSet(assayData = as.matrix(frontiers_countm_filt))
+frontiers_deconv <- BisqueRNA::ReferenceBasedDecomposition(frontiers.eset, sc.eset, markers = NULL, use.overlap = FALSE)
+gc()
+frontiers_res <- as.data.frame(t(frontiers_deconv$bulk.props))
+frontiers_meta_deconv_filt <- cbind(frontiers_meta_filt, frontiers_res)
+
+save(elife_meta_deconv_filt, therano_meta_deconv_filt, npj_meta_deconv_filt, frontiers_meta_deconv_filt, file = "./data/deconv_res_filt.RData")
+```
+
+# Deconvolution (all; elife)
+
+```{r deconv_filt, fig.width= 15, fig.height=8}
+load("./data/cfinput_clean_all.RData")
+
+# elife
+elife.eset <- Biobase::ExpressionSet(assayData = as.matrix(elife_batch_all))
+elife_deconv <- BisqueRNA::ReferenceBasedDecomposition(elife.eset, sc.eset, markers = NULL, use.overlap = FALSE)
+gc()
+elife_res <- as.data.frame(t(elife_deconv$bulk.props))
+elife_meta_deconv_all <- cbind(elife_meta_all, elife_res)
+
+save(elife_meta_deconv_all, therano_meta_deconv_filt, npj_meta_deconv_filt, frontiers_meta_deconv_filt, file = "./data/deconv_res_all.RData")
+```
+
+```{r}
+sessionInfo()
+```
