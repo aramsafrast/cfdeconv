@@ -511,7 +511,7 @@ p1 <- merged_data %>%
   geom_errorbar(aes(xmin = low, xmax = up, group = interaction(model, metrics)), position = "dodge") +
   scale_x_continuous(expand = c(0, 0), breaks = breaks_extended(n = 8)) +
   scale_y_discrete(labels = c("Accuracy", "Specificity", "Sensitivity"), expand = c(0, 0)) +
-  scale_fill_manual(labels = c("Hepatocyte proportion cut-off", "Targeted cellular deconvolution", "Chen et al. (2022) markers", "Roskams-Hieter et al. (2022) markers", paste0("Combined gene markers", "\n", "(Roskams-Hieter et al. markers + Chen et al. markers)"), paste0("Integrated model", "\n", "(Combined gene markers + Targeted cellular deconvolution)")), values = c("deepskyblue2", "deepskyblue4", "pink2", "pink3", "pink4", "khaki4")) +
+  scale_fill_manual(labels = c("Hepatocyte proportion cut-off", "Targeted cellular deconvolution", "Markers from Chen et al. (2022)", "Markers from Roskams-Hieter et al. (2022)", paste0("Combined gene markers", "\n", "(Roskams-Hieter et al. markers + Chen et al. markers)"), paste0("Integrated model", "\n", "(Combined gene markers + Targeted cellular deconvolution)")), values = c("deepskyblue2", "deepskyblue4", "pink2", "pink3", "pink4", "khaki4")) +
   guides(fill = guide_legend(byrow = TRUE, reverse = TRUE)) +
   theme_pubclean(flip = TRUE, base_size = 18, base_family = "Helvetica") +
   theme(legend.text=element_text(size = 16, family = "Helvetica"), legend.title = element_text(size = 18, family = "Helvetica"), legend.position = "right", legend.key.height = unit(2, "lines"), legend.spacing.y = unit(0.7, 'cm'), plot.title = element_text(hjust = 0.5, face = "bold", size = 18), axis.title.y = element_blank(), axis.title.x = element_blank())
