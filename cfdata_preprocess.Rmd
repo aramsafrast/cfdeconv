@@ -277,7 +277,7 @@ rm(dds_frontiers, vsd_frontiers, pca_frontiers)
 save(elife_batch_filt, elife_meta_filt, npj_batch_filt, npj_meta_filt, therano_countm, therano_meta, frontiers_countm_filt, frontiers_meta_filt, file = "./data/cfinput_clean_filt.RData")
 rm(elife_batch_filt, elife_meta_filt, npj_batch_filt, npj_meta_filt, frontiers_countm_filt, frontiers_meta_filt)
 
-p0 <- ggarrange(c, a, b, d, common.legend = TRUE) + plot_annotation(title = "Princripal component analysis (PCA) plot per dataset", theme = theme(plot.title = element_text(size = 22, family = "Helvetica", face = "bold", hjust = 0.5), plot.subtitle = element_text(hjust = 0.5, face = "bold", family = "Helvetica", size = 16)))
+p0 <- ggarrange(c, a, b, d, common.legend = TRUE, labels = "AUTO", font.label = list(size = 20, family = "Helvetica")) + plot_annotation(theme = theme(plot.title = element_text(size = 22, family = "Helvetica", face = "bold", hjust = 0.5), plot.subtitle = element_text(hjust = 0.5, face = "bold", family = "Helvetica", size = 16)))
 ggsave(plot = p0, file = "./figures/suppl1.png", units = "mm", device = ragg::agg_png, height = 90, width = 90, scaling = 0.45, limitsize = FALSE, dpi = 300, bg = "transparent")
 gc()
 ```

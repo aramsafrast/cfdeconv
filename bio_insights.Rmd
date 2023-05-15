@@ -382,8 +382,7 @@ o4 <- b4 %>%
   theme_pubclean(base_size = 16, base_family = "Helvetica", flip = TRUE) +
   theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 18), plot.caption = element_text(size = 14, hjust = 1, vjust = 0, face = "italic", color = "black"), panel.grid.minor = element_blank())
 
-
-o5 <- ggarrange(o1, o2, o3, o4, common.legend = TRUE, labels = "AUTO", hjust = -2, font.label = list(size = 20, family = "Helvetica")) + plot_annotation(title = "Importance of cell types in random forest models per dataset", theme = theme(plot.title = element_text(size = 20, family = "Helvetica", face = "bold", hjust = 0.5)))
+o5 <- ggarrange(o1, o2, o3, o4, common.legend = TRUE, labels = "AUTO", hjust = -2, font.label = list(size = 20, family = "Helvetica")) + plot_annotation(theme = theme(plot.title = element_text(size = 20, family = "Helvetica", face = "bold", hjust = 0.5)))
 ggsave(plot = o5, file = "./figures/main3.png", units = "mm", device = ragg::agg_png, height = 90, width = 170, scaling = 0.45, limitsize = FALSE, dpi = 300, bg = "transparent")
 
 # ev wilcoxon
@@ -431,7 +430,7 @@ k2 <- ft %>%
   guides(color = guide_legend(override.aes = list(size = 5)))
 k2
 
-k3 <- ggarrange(k1, k2, labels = "AUTO", hjust = -2, font.label = list(size = 20, family = "Helvetica")) + plot_annotation(title = "Cell type proportion differences between plasma and EV samples", theme = theme(plot.title = element_text(size = 20, family = "Helvetica", face = "bold", hjust = 0.5)))
+k3 <- ggarrange(k1, k2, labels = "AUTO", hjust = -2, font.label = list(size = 20, family = "Helvetica")) + plot_annotation(theme = theme(plot.title = element_text(size = 20, family = "Helvetica", face = "bold", hjust = 0.5)))
 # p5
 ggsave(plot = k3, file = "./figures/suppl3.png", units = "mm", device = ragg::agg_png, height = 90, width = 170, scaling = 0.45, limitsize = FALSE, dpi = 300, bg = "transparent")
 

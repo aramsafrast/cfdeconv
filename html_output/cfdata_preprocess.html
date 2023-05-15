@@ -439,7 +439,7 @@ display: none;
 
 <h1 class="title toc-ignore">Cell-free RNA data preprocessing</h1>
 <h4 class="author">Aram Safrastyan</h4>
-<h4 class="date">14 Mai, 2023</h4>
+<h4 class="date">15 Mai, 2023</h4>
 
 </div>
 
@@ -737,12 +737,12 @@ d</code></pre>
 save(elife_batch_filt, elife_meta_filt, npj_batch_filt, npj_meta_filt, therano_countm, therano_meta, frontiers_countm_filt, frontiers_meta_filt, file = &quot;./data/cfinput_clean_filt.RData&quot;)
 rm(elife_batch_filt, elife_meta_filt, npj_batch_filt, npj_meta_filt, frontiers_countm_filt, frontiers_meta_filt)
 
-p0 &lt;- ggarrange(c, a, b, d, common.legend = TRUE) + plot_annotation(title = &quot;Princripal component analysis (PCA) plot per dataset&quot;, theme = theme(plot.title = element_text(size = 22, family = &quot;Helvetica&quot;, face = &quot;bold&quot;, hjust = 0.5), plot.subtitle = element_text(hjust = 0.5, face = &quot;bold&quot;, family = &quot;Helvetica&quot;, size = 16)))
+p0 &lt;- ggarrange(c, a, b, d, common.legend = TRUE, labels = &quot;AUTO&quot;, font.label = list(size = 20, family = &quot;Helvetica&quot;)) + plot_annotation(theme = theme(plot.title = element_text(size = 22, family = &quot;Helvetica&quot;, face = &quot;bold&quot;, hjust = 0.5), plot.subtitle = element_text(hjust = 0.5, face = &quot;bold&quot;, family = &quot;Helvetica&quot;, size = 16)))
 ggsave(plot = p0, file = &quot;./figures/suppl1.png&quot;, units = &quot;mm&quot;, device = ragg::agg_png, height = 90, width = 90, scaling = 0.45, limitsize = FALSE, dpi = 300, bg = &quot;transparent&quot;)
 gc()</code></pre>
 <pre><code>##            used  (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells  8022523 428.5   11729028  626.4  11729028  626.4
-## Vcells 49749892 379.6  137505399 1049.1 137505399 1049.1</code></pre>
+## Ncells  8024415 428.6   11728947  626.4  11728947  626.4
+## Vcells 49753576 379.6  137505749 1049.1 137505749 1049.1</code></pre>
 </div>
 <div id="analysis-of-all-samples-elife" class="section level1" number="4">
 <h1><span class="header-section-number">4</span> Analysis of all samples

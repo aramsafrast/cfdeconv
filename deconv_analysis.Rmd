@@ -152,7 +152,7 @@ z2 <- plot_confusion_matrix(conf_mat, counts_on_top = T, add_normalized = F, cla
 z2
 z3 <- ggarrange(z1, z2, labels = c("B", "C"), font.label = list(size = 24, family = "Helvetica")) + plot_annotation(theme = theme(plot.title = element_text(size = 20, family = "Helvetica", face = "bold", hjust = 0.5), plot.subtitle = element_text(hjust = 0.5, face = "bold", family = "Helvetica", size = 16)))
 z3
-a <- ggarrange(p0, z3, nrow = 2) + plot_annotation(title = "Analysis of hepatocyte proportions in cfRNA datasets", theme = theme(plot.title = element_text(size = 20, family = "Helvetica", face = "bold", hjust = 0.5), plot.subtitle = element_text(hjust = 0.5, face = "bold", family = "Helvetica", size = 16))) 
+a <- ggarrange(p0, z3, nrow = 2) + plot_annotation(theme = theme(plot.title = element_text(size = 20, family = "Helvetica", face = "bold", hjust = 0.5), plot.subtitle = element_text(hjust = 0.5, face = "bold", family = "Helvetica", size = 16))) 
 ggsave(plot = a, file = "./figures/main2.png", units = "mm", device = ragg::agg_png, height = 170, width = 170, scaling = 0.45, limitsize = FALSE, dpi = 300, bg = "transparent")
 
 hepato <- merged
@@ -253,7 +253,6 @@ in_plot <- ggplot(b, aes(x = dataset, y = AUC, fill = dataset)) +
   scale_fill_manual(values = cols) +
   scale_x_discrete(labels = NULL, breaks = NULL) +
   labs(x = "") +
-  ggtitle("AUC values of the ROC curves") +
   theme_pubclean(base_size = 13, base_family = "Helvetica") +
   theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 13.5), axis.text.x = element_blank(), axis.title.x = element_blank(), plot.caption = NULL) +
   guides(fill = "none")
@@ -518,17 +517,17 @@ p1 <- merged_data %>%
   theme(legend.text=element_text(size = 16, family = "Helvetica"), legend.title = element_text(size = 18, family = "Helvetica"), legend.position = "right", legend.key.height = unit(2, "lines"), legend.spacing.y = unit(0.7, 'cm'), plot.title = element_text(hjust = 0.5, face = "bold", size = 18), axis.title.y = element_blank(), axis.title.x = element_blank())
 int3 <- ggarrange(int1, int2, nrow = 1, labels = "AUTO", hjust = -2,  font.label = list(size = 22, family = "Helvetica")) 
 p11 <- ggarrange(p1, nrow = 1, labels = "C", hjust = -2, font.label = list(size = 22, family = "Helvetica")) 
-t3 <- ggarrange(int3, p11, nrow = 2) + plot_annotation(title = "Performance assesment of integrated modeling", theme = theme(plot.title = element_text(size = 20, family = "Helvetica", face = "bold", hjust = 0.5), plot.subtitle = element_text(hjust = 0.5, face = "bold", family = "Helvetica", size = 16)))
+t3 <- ggarrange(int3, p11, nrow = 2) + plot_annotation(theme = theme(plot.title = element_text(size = 20, family = "Helvetica", face = "bold", hjust = 0.5), plot.subtitle = element_text(hjust = 0.5, face = "bold", family = "Helvetica", size = 16)))
 t3
 # export figure
 ggsave(plot = t3, file = "./figures/main4.png", units = "mm", device = ragg::agg_png, height = 170, width = 170, scaling = 0.45, limitsize = FALSE, dpi = 300)
 
-t0 <- ggarrange(deconv1, npj1, elife1, comb1, nrow = 2, ncol = 2, common.legend = TRUE, labels = "AUTO", hjust = -2, font.label = list(size = 22, family = "Helvetica")) + plot_annotation(title = "ROC curves and AUC values of the models per dataset", theme = theme(plot.title = element_text(size = 22, family = "Helvetica", face = "bold", hjust = 0.5), plot.subtitle = element_text(hjust = 0.5, face = "bold", family = "Helvetica", size = 16)))
+t0 <- ggarrange(deconv1, npj1, elife1, comb1, nrow = 2, ncol = 2, common.legend = TRUE, labels = "AUTO", hjust = -2, font.label = list(size = 22, family = "Helvetica")) + plot_annotation(theme = theme(plot.title = element_text(size = 22, family = "Helvetica", face = "bold", hjust = 0.5), plot.subtitle = element_text(hjust = 0.5, face = "bold", family = "Helvetica", size = 16)))
 # t3
 # export figure
 ggsave(plot = t0, file = "./figures/suppl4.png", units = "mm", device = ragg::agg_png, height = 170, width = 170, scaling = 0.45, limitsize = FALSE, dpi = 300)
 
-t3 <- ggarrange(deconv2, npj2, elife2, comb2, nrow = 2, ncol = 2, common.legend = TRUE, labels = "AUTO", hjust = -2, font.label = list(size = 22, family = "Helvetica")) + plot_annotation(title = "Confusion matrices of model training", theme = theme(plot.title = element_text(size = 22, family = "Helvetica", face = "bold", hjust = 0.5), plot.subtitle = element_text(hjust = 0.5, face = "bold", family = "Helvetica", size = 16)))
+t3 <- ggarrange(deconv2, npj2, elife2, comb2, nrow = 2, ncol = 2, common.legend = TRUE, labels = "AUTO", hjust = -2, font.label = list(size = 22, family = "Helvetica")) + plot_annotation(theme = theme(plot.title = element_text(size = 22, family = "Helvetica", face = "bold", hjust = 0.5), plot.subtitle = element_text(hjust = 0.5, face = "bold", family = "Helvetica", size = 16)))
 t3
 # export figure
 ggsave(plot = t3, file = "./figures/suppl5.png", units = "mm", device = ragg::agg_png, height = 170, width = 170, scaling = 0.45, limitsize = FALSE, dpi = 300)
@@ -552,7 +551,6 @@ a <- ggplot(all_npj, aes(d = resp, m = pred, color = model)) +
   style_roc() +
   geom_abline() +
   scale_color_manual(values = cols, labels = function(x) str_wrap(x, 30), guide = guide_legend()) +
-  ggtitle("Performance of model training with Roskams-Hieter et al. (2022) dataset") +
   theme_pubr(base_size = 16, base_family = "Helvetica") +
   theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 18), plot.subtitle = element_text(hjust = 0.5, face = "bold"), plot.caption = element_text(size = 12, hjust = 1, vjust = 0, face = "italic", color = "black")) +
   guides(color = guide_legend(override.aes = list(linewidth = 10)))

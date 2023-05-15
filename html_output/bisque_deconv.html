@@ -439,7 +439,7 @@ display: none;
 
 <h1 class="title toc-ignore">SC-based Bisque deconvolution</h1>
 <h4 class="author">Aram Safrastyan</h4>
-<h4 class="date">14 Mai, 2023</h4>
+<h4 class="date">15 Mai, 2023</h4>
 
 </div>
 
@@ -526,8 +526,8 @@ elife_deconv &lt;- BisqueRNA::ReferenceBasedDecomposition(elife.eset, sc.eset, m
 <pre><code>## Applying transformation to bulk samples and decomposing.</code></pre>
 <pre class="r"><code>gc()</code></pre>
 <pre><code>##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   3527605  188.4    5618782  300.1   5618782  300.1
-## Vcells 201466372 1537.1  664888997 5072.8 831109957 6340.9</code></pre>
+## Ncells   3527717  188.5    5620905  300.2   5620905  300.2
+## Vcells 201466628 1537.1  664889352 5072.8 831110213 6340.9</code></pre>
 <pre class="r"><code>elife_res &lt;- as.data.frame(t(elife_deconv$bulk.props))
 elife_meta_deconv_filt &lt;- cbind(elife_meta_filt, elife_res)
 
@@ -545,8 +545,8 @@ therano_deconv &lt;- BisqueRNA::ReferenceBasedDecomposition(therano.eset, sc.ese
 <pre><code>## Applying transformation to bulk samples and decomposing.</code></pre>
 <pre class="r"><code>gc()</code></pre>
 <pre><code>##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   3529536  188.5    5618782  300.1   5618782  300.1
-## Vcells 204736761 1562.1  638357437 4870.3 831109957 6340.9</code></pre>
+## Ncells   3529648  188.6    5620905  300.2   5620905  300.2
+## Vcells 204737017 1562.1  638357778 4870.3 831110213 6340.9</code></pre>
 <pre class="r"><code>therano_res &lt;- as.data.frame(t(therano_deconv$bulk.props))
 therano_meta_deconv_filt &lt;- cbind(therano_meta, therano_res)
 
@@ -564,8 +564,8 @@ npj_deconv &lt;- BisqueRNA::ReferenceBasedDecomposition(npj.eset, sc.eset, marke
 <pre><code>## Applying transformation to bulk samples and decomposing.</code></pre>
 <pre class="r"><code>gc()</code></pre>
 <pre><code>##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   3532810  188.7    5618782  300.1   5618782  300.1
-## Vcells 208006294 1587.0  612887140 4676.0 831109957 6340.9</code></pre>
+## Ncells   3532922  188.7    5620905  300.2   5620905  300.2
+## Vcells 208006550 1587.0  612887467 4676.0 831110213 6340.9</code></pre>
 <pre class="r"><code>npj_res &lt;- as.data.frame(t(npj_deconv$bulk.props))
 npj_meta_deconv_filt &lt;- cbind(npj_meta_filt, npj_res)
 
@@ -583,8 +583,8 @@ frontiers_deconv &lt;- BisqueRNA::ReferenceBasedDecomposition(frontiers.eset, sc
 <pre><code>## Applying transformation to bulk samples and decomposing.</code></pre>
 <pre class="r"><code>gc()</code></pre>
 <pre><code>##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   3533109  188.7    5618782  300.1   5618782  300.1
-## Vcells 208920899 1594.0  588435655 4489.5 831109957 6340.9</code></pre>
+## Ncells   3533221  188.7    5620905  300.2   5620905  300.2
+## Vcells 208921155 1594.0  588435968 4489.5 831110213 6340.9</code></pre>
 <pre class="r"><code>frontiers_res &lt;- as.data.frame(t(frontiers_deconv$bulk.props))
 frontiers_meta_deconv_filt &lt;- cbind(frontiers_meta_filt, frontiers_res)
 
@@ -609,8 +609,8 @@ elife_deconv &lt;- BisqueRNA::ReferenceBasedDecomposition(elife.eset, sc.eset, m
 <pre><code>## Applying transformation to bulk samples and decomposing.</code></pre>
 <pre class="r"><code>gc()</code></pre>
 <pre><code>##             used   (Mb) gc trigger   (Mb)  max used   (Mb)
-## Ncells   3534050  188.8    5618782  300.1   5618782  300.1
-## Vcells 263618665 2011.3  789086119 6020.3 986352855 7525.3</code></pre>
+## Ncells   3534162  188.8    5620905  300.2   5620905  300.2
+## Vcells 263618921 2011.3  789086413 6020.3 986353111 7525.3</code></pre>
 <pre class="r"><code>elife_res &lt;- as.data.frame(t(elife_deconv$bulk.props))
 elife_meta_deconv_all &lt;- cbind(elife_meta_all, elife_res)
 
