@@ -7,7 +7,8 @@ The .Rmd files need to be executed in the following order:
 3. ext_markers.Rmd
 4. deconv_analysis.Rmd
 5. bio_insights.Rmd
-6. suppl_tables.Rmd
+6. conf_factors.Rmd
+7. suppl_tables.Rmd
 
 ### Contact
 For any questions, please contact <aram.safrastyan@uni-jena.de>

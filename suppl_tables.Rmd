@@ -8,11 +8,10 @@ output:
     code_folding: hide
     number_sections: TRUE
 knit: (function(input, ...) {
+    )
     rmarkdown::render(
       input,
       output_dir = "./html_output"
-    )
-  })
 editor_options: 
   chunk_output_type: console
 ---
@@ -26,25 +25,13 @@ editor_options:
 </style>
 
 ```{r pkgs, message=F, warning=F}
-library(ggrepel)
-library(randomForest)
 library(tidyverse)
-library(caret)
-library(scales)
-library(glmnet)
 library(readr)
-library(tidyverse)
-library(ggfortify)
-library(ggpubr)
 library(rstatix)
 library(DescTools)
-library(ggcorrplot)
-library(plotROC)
-library(patchwork)
-library(cvms)
 library(DT)
 library(openxlsx)
-library(viridis)
+library(glmnet)
 ```
 
 ```{r setup, include=FALSE}
@@ -78,6 +65,7 @@ write.xlsx(list_of_datasets, file = "./tables/suppl_table1.xlsx")
 ```{r, tables2, fig.width= 15, fig.height=8, warning = FALSE}
 load("./temp_files/ev_stat.RData")
 load("./temp_files/hepato_test.RData")
+load("./temp_files/age_stat.RData")
 ev_stat$group1 <- "plasma"
 ev_stat <- ev_stat %>%
   dplyr::select(-.y.)
@@ -88,12 +76,23 @@ ev_all <- t(cbind(ev_stat, ev_effect)) %>%
   dplyr::rename("value" = V1) %>%
   rownames_to_column(var = "feature")
 
+stat.test$variable2 <- "full"
+stat.test1$variable2 <- "mis"
+stat.test2$variable2 <- "full"
+stat.test3$variable2 <- "mis"
+
+table1 <- rbind(stat.test, stat.test1) %>% dplyr::inner_join(., rbind(stat.test_effect, stat.test_effect1)) %>% dplyr::rename(variable1 = "gender")
+table2 <- rbind(stat.test2, stat.test3) %>% dplyr::inner_join(., rbind(stat.test_effect2, stat.test_effect3)) %>% dplyr::rename(variable1 = "cond")
+table_join <- rbind(table1, table2) 
+table3 <- stat.test4 %>% dplyr::inner_join(., stat.test_effect4) %>% dplyr::rename(variable1 = "gender") %>% dplyr::rename(variable2 = "cond") 
+table_full <- rbind(table_join, table3) %>% dplyr::select(variable1, variable2, colnames(table_join[c(2:8, 10:13)]))
+
 levels(hepato_stat$dataset) <- c("Roskams-Hieter et al. (2022)", "Chen et al. (2022)", "Zhu et al. (2021)", "Block et al. (2022)")
 hepato_stat <- hepato_stat %>%
   dplyr::select(-c(11:15))
 levels(hepato_effect$dataset) <- c("Roskams-Hieter et al. (2022)", "Chen et al. (2022)", "Zhu et al. (2021)", "Block et al. (2022)")
 
-list_of_datasets <- list("Hepatocyte proportion testing" = hepato_stat, "Hepatocyte prop. effect size" = hepato_effect, "Plasma_EV test & effect size" = ev_all)
+list_of_datasets <- list("Hepatocyte proportion testing" = hepato_stat, "Hepatocyte prop. effect size" = hepato_effect, "Plasma_EV test & effect size" = ev_all, "Confounder influence" = table_full)
 write.xlsx(list_of_datasets, file = "./tables/suppl_table2.xlsx")
 ```
 
