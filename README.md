@@ -1,4 +1,7 @@
-The code is written in R and markdown. 
+# Decoding cell-type contributions to the cfRNA transcriptomic landscape of liver cancer
+_____________________________________________
+
+This repository is aimed at reproducing the results of the paper [***"Decoding cell-type contributions to the cfRNA transcriptomic landscape of liver cancer"***](https://doi.org/10.1186/s40246-023-00537-w). Human Genomics 17 (1), 1-14. The code is written in R. 
 
 The .Rmd files need to be executed in the following order:
 
